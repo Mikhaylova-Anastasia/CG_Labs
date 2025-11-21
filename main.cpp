@@ -30,6 +30,7 @@ struct GouraudPhongShader : public IShader {
 
     Matrix uniform_M;
     Matrix uniform_MIT;
+    Matrix uniform_P;
     Vec3f  uniform_light_dir;
 
     virtual Vec4f vertex(int iface, int nthvert) {
@@ -37,12 +38,12 @@ struct GouraudPhongShader : public IShader {
         Vec3f n_obj = model->normal(iface, nthvert);
         Vec2f uv = model->uv(iface, nthvert);
 
-        
         varying_uv.set_col(nthvert, uv);
 
-        
+
         Vec4f v_cam4 = uniform_M * embed<4>(v_obj, 1.f);
         Vec3f v_cam = proj<3>(v_cam4);
+
 
         Vec3f n = proj<3>(uniform_MIT * embed<4>(n_obj, 0.f)).normalize();
 
@@ -60,11 +61,10 @@ struct GouraudPhongShader : public IShader {
         float ks = 0.5f;
 
         float I = ambient + kd * diff + ks * spec;
-
         varying_intensity[nthvert] = I;
 
-        
-        Vec4f gl_Vertex = Projection * v_cam4;
+
+        Vec4f gl_Vertex = uniform_P * v_cam4;
         return gl_Vertex;
     }
 
@@ -73,7 +73,6 @@ struct GouraudPhongShader : public IShader {
         float I = varying_intensity * bar;
 
         TGAColor c = model->diffuse(uv);
-
         for (int i = 0; i < 3; i++) {
             float v = c[i] * I;
             c[i] = (unsigned char)std::min(255.0f, v);
@@ -82,8 +81,6 @@ struct GouraudPhongShader : public IShader {
         return false;
     }
 };
-
-
 
 int main(int argc, char** argv) {
     if (argc > 1) {
@@ -97,28 +94,31 @@ int main(int argc, char** argv) {
     TGAImage frame(width, height, TGAImage::RGB);
     TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
-    
-    lookat(camera.getEye(), camera.getCenter(), camera.getUp());
-    projection(-1.f / (camera.getEye() - camera.getCenter()).norm());
-    viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
+
+    Matrix ModelView = camera.getModelView();
+    Matrix Projection = camera.getProjection();
+    Matrix Viewport = camera.getViewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
 
     light_dir.normalize();
 
-    Matrix M = ModelView;
     Matrix MIT = ModelView.invert_transpose();
 
-    Vec3f L_cam = proj<3>(M * embed<4>(light_dir, 0.f));
+
+    Vec3f L_cam = proj<3>(ModelView * embed<4>(light_dir, 0.f));
     L_cam.normalize();
 
     GouraudPhongShader shader;
-    shader.uniform_M = M;
+    shader.uniform_M = ModelView;
     shader.uniform_MIT = MIT;
+    shader.uniform_P = Projection;
     shader.uniform_light_dir = L_cam;
 
     for (int i = 0; i < model->nfaces(); i++) {
         Vec4f clip_verts[3];
         for (int j = 0; j < 3; j++) {
+
             clip_verts[j] = shader.vertex(i, j);
+
             clip_verts[j] = Viewport * clip_verts[j];
         }
         triangle(clip_verts, shader, frame, zbuffer);

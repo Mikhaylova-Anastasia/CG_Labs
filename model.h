@@ -9,7 +9,7 @@
 class Model {
 private:
     std::vector<Vec3f> verts_;
-    std::vector<std::vector<Vec3i>> faces_; // (v / vt / vn)
+    std::vector<std::vector<Vec3i>> faces_;
     std::vector<Vec3f> norms_;
     std::vector<Vec2f> uv_;
     TGAImage diffusemap_;

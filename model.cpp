@@ -37,7 +37,7 @@ Model::Model(const char* filename)
             std::vector<Vec3i> f;
             Vec3i tmp;
             while (iss >> tmp[0] >> trash >> tmp[1] >> trash >> tmp[2]) {
-                for (int i = 0; i < 3; i++) tmp[i]--; // OBJ indices start from 1
+                for (int i = 0; i < 3; i++) tmp[i]--; 
                 f.push_back(tmp);
             }
             faces_.push_back(f);
