@@ -8,10 +8,17 @@
 
 class Model {
 private:
-    std::vector<Vec3f> verts_;
-    std::vector<std::vector<Vec3i>> faces_;
-    std::vector<Vec3f> norms_;
-    std::vector<Vec2f> uv_;
+    
+    std::vector<Vec3f> verts_;                    
+    std::vector<Vec3f> norms_;                    
+    std::vector<Vec2f> uv_;                       
+
+    
+    std::vector<std::vector<int>> faces_;         
+    std::vector<std::vector<int>> uv_idx_;        
+    std::vector<std::vector<int>> norm_idx_;     
+
+    
     TGAImage diffusemap_;
     TGAImage normalmap_;
     TGAImage specularmap_;
@@ -25,14 +32,20 @@ public:
     int nverts();
     int nfaces();
 
+    
     Vec3f vert(int i);
+
+    
     Vec3f vert(int iface, int nthvert);
     Vec3f normal(int iface, int nthvert);
-    Vec3f normal(Vec2f uv);
     Vec2f uv(int iface, int nthvert);
+
+    
+    Vec3f normal(Vec2f uv);
     TGAColor diffuse(Vec2f uv);
     float specular(Vec2f uv);
+
     std::vector<int> face(int idx);
 };
 
-#endif //__MODEL_H__
+#endif // __MODEL_H__

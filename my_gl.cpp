@@ -1,4 +1,3 @@
-
 #include <cmath>
 #include <limits>
 #include "my_gl.h"
@@ -14,14 +13,14 @@ static Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
     Vec3f u = cross(s[0], s[1]);
     if (std::abs(u.z) > 1e-2f)
         return Vec3f(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
-    return Vec3f(-1, 1, 1);
+    return Vec3f(-1, 1, 1); 
 }
 
 void triangle(Vec4f* pts, IShader& shader, TGAImage& image, TGAImage& zbuffer) {
     Vec2f bboxmin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
-
+    
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 2; j++) {
             bboxmin[j] = std::min(bboxmin[j], pts[i][j] / pts[i][3]);
@@ -53,11 +52,27 @@ void triangle(Vec4f* pts, IShader& shader, TGAImage& image, TGAImage& zbuffer) {
             int frag_depth = int(z / w + 0.5f);
             frag_depth = std::max(0, std::min(255, frag_depth));
 
+            
             if (zbuffer.get(P.x, P.y)[0] > frag_depth)
                 continue;
 
             bool discard = shader.fragment(bc_screen, color);
-            if (!discard) {
+            if (discard) continue;
+
+            if (shader.is_transparent) {
+                
+                float a = std::max(0.f, std::min(1.f, shader.alpha));
+
+                TGAColor under = image.get(P.x, P.y);
+                TGAColor out;
+                for (int k = 0; k < 3; k++) {
+                    float v = under[k] * (1.f - a) + color[k] * a;
+                    out[k] = (unsigned char)std::max(0.f, std::min(255.f, v));
+                }
+                image.set(P.x, P.y, out);
+            }
+            else {
+                
                 zbuffer.set(P.x, P.y, TGAColor(frag_depth));
                 image.set(P.x, P.y, color);
             }
